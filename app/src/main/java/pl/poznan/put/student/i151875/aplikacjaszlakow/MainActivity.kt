@@ -27,13 +27,18 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 
 
 class MainActivity : ComponentActivity() {
@@ -47,23 +52,48 @@ class MainActivity : ComponentActivity() {
 
 }
 
+
+
+
 @Composable
 fun Navig(navController: NavHostController) {
+    var selectedTrackName by rememberSaveable {
+        mutableStateOf("test")
+    }
+    var selectedTrackDescription by rememberSaveable {
+        mutableStateOf("test")
+    }
+    var selectedTrackPhoto by rememberSaveable {
+        mutableStateOf(R.drawable.ic_launcher_background)
+    }
+
+
     NavHost(navController = navController, startDestination = "main") {
-        var selectedTrack: Track = Track("test","test",R.drawable.ic_launcher_background)
+
+
         composable(route="main") {
-            TabScreen() {
-                track -> selectedTrack = track
-                navController.navigate(route = "details")
+            TabScreen() { track ->
+                selectedTrackName = track.name
+                selectedTrackDescription = track.description
+                selectedTrackPhoto = track.photo
+                navController.navigate(route = "details/${selectedTrackName}")
             }
         }
-        composable(route="details") {
+        composable(
+            route="details",
+            arguments = listOf(navArgument("trackName") {type = NavType.StringType})
+            ) { backStackEntry ->
+            val trackName = backStackEntry.arguments?.getString("trackName")
+
+            //val dst: DetailsScreenState = SavedDetailStates[trackName] //TODO
+
             Column(
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                DetailsContent(selectedTrack)
+                DetailsContent(Track(selectedTrackName, selectedTrackDescription, selectedTrackPhoto))
 
-                val timerViewModel = MyTimerViewModel()
+                val timerViewModel = TimerViewModel()
+
                 Surface (
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -77,6 +107,13 @@ fun Navig(navController: NavHostController) {
     }
 }
 
+class DetailsScreenState(t: Track, tvm: TimerViewModel) {
+    init {
+        val track: Track = t
+        val timer: TimerViewModel = tvm
+    }
+
+}
 
 
 @Composable
@@ -103,8 +140,12 @@ fun TabScreen(onTrackClicked: (track: Track) -> Unit) {
         }
         when (tabIndex) {
             0 -> AboutScreen()
-            1 -> EasyTracksScreen(onTrackClicked)
-            2 -> HardTracksScreen(onTrackClicked)
+            1 -> {
+                EasyTracksScreen(onTrackClicked)
+            }
+            2 -> {
+                HardTracksScreen(onTrackClicked)
+            }
         }
     }
 }
@@ -136,8 +177,6 @@ fun HardTracksScreen(onTrackClicked: (track: Track) -> Unit) {
 
 @Composable
 fun EasyTracksScreen(onTrackClicked: (track: Track) -> Unit) {
-
-    //var trackIndex by rememberSaveable { mutableStateOf(-1) }
 
     val tracks: List<Track> = listOf(
         Track(

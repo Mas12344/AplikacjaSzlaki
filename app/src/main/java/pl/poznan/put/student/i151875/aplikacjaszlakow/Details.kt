@@ -40,7 +40,7 @@ fun Long.formatTime(): String {
 }
 
 @Composable
-fun MyTimerContent(timerViewModel: MyTimerViewModel) {
+fun MyTimerContent(timerViewModel: TimerViewModel) {
     val timerValue by timerViewModel.timer.collectAsState()
 
     MyTimer(
