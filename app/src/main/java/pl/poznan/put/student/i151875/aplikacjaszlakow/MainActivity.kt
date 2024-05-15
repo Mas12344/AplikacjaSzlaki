@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,21 +24,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.SaverScope
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
+
+
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-
+import androidx.activity.compose.BackHandler
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,12 +82,13 @@ fun Navig(navController: NavHostController) {
             }
         }
         composable(
-            route="details",
+            route="details/{trackName}",
             arguments = listOf(navArgument("trackName") {type = NavType.StringType})
             ) { backStackEntry ->
             val trackName = backStackEntry.arguments?.getString("trackName")
 
             //val dst: DetailsScreenState = SavedDetailStates[trackName] //TODO
+
 
             Column(
                 verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -115,6 +118,7 @@ class DetailsScreenState(t: Track, tvm: TimerViewModel) {
 
 }
 
+//TODO ListDetailPaneScaffold
 
 @Composable
 fun TabScreen(onTrackClicked: (track: Track) -> Unit) {
@@ -150,6 +154,7 @@ fun TabScreen(onTrackClicked: (track: Track) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun HardTracksScreen(onTrackClicked: (track: Track) -> Unit) {
     val tracks: List<Track> = listOf(
@@ -166,6 +171,41 @@ fun HardTracksScreen(onTrackClicked: (track: Track) -> Unit) {
             "Opis 3",
             R.drawable.track3)
     )
+
+    val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
+    BackHandler(navigator.canNavigateBack()) {
+        navigator.navigateBack()
+    }
+
+    ListDetailPaneScaffold(
+        directive = navigator.scaffoldDirective,
+        value = navigator.scaffoldValue,
+        listPane = {
+            AnimatedPane {
+                CardList(
+                    tracks = tracks,
+                    onTrackClicked = onTrackClicked
+                )
+            }
+        },
+
+        detailPane = {
+            AnimatedPane {
+                navigator.currentDestination?.content?.let {
+                    Text("Detale")
+                }
+            }
+        },
+    )
+    
+    
+}
+
+
+
+
+@Composable
+fun CardList(tracks: List<Track>, onTrackClicked: (track: Track) -> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 128.dp)
     ) {
@@ -205,7 +245,7 @@ fun EasyTracksScreen(onTrackClicked: (track: Track) -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackItem(track: Track, onTrackClicked: (track: Track) -> Unit) {
-    val context = LocalContext.current
+
     Card(onClick = {
         Log.d("Card item", "clicked")
         onTrackClicked(track)
