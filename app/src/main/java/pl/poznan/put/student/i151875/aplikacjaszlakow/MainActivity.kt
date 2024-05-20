@@ -42,13 +42,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.activity.compose.BackHandler
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val navController = rememberNavController()
-            Navig(navController)
+            TabScreen()
         }
     }
 
@@ -56,32 +56,8 @@ class MainActivity : ComponentActivity() {
 
 
 
-
-@Composable
-fun Navig(navController: NavHostController) {
-    var selectedTrackName by rememberSaveable {
-        mutableStateOf("test")
-    }
-    var selectedTrackDescription by rememberSaveable {
-        mutableStateOf("test")
-    }
-    var selectedTrackPhoto by rememberSaveable {
-        mutableStateOf(R.drawable.ic_launcher_background)
-    }
-
-
-    NavHost(navController = navController, startDestination = "main") {
-
-
-        composable(route="main") {
-            TabScreen() { track ->
-                selectedTrackName = track.name
-                selectedTrackDescription = track.description
-                selectedTrackPhoto = track.photo
-                navController.navigate(route = "details/${selectedTrackName}")
-            }
-        }
-        composable(
+/*
+composable(
             route="details/{trackName}",
             arguments = listOf(navArgument("trackName") {type = NavType.StringType})
             ) { backStackEntry ->
@@ -107,8 +83,7 @@ fun Navig(navController: NavHostController) {
             }
 
         }
-    }
-}
+ */
 
 class DetailsScreenState(t: Track, tvm: TimerViewModel) {
     init {
@@ -121,7 +96,7 @@ class DetailsScreenState(t: Track, tvm: TimerViewModel) {
 //TODO ListDetailPaneScaffold
 
 @Composable
-fun TabScreen(onTrackClicked: (track: Track) -> Unit) {
+fun TabScreen() {
     var tabIndex by rememberSaveable { mutableStateOf(0) }
 
     val tabs = listOf("O Aplikacji", "Łatwe trasy", "Trudne trasy")
@@ -145,10 +120,10 @@ fun TabScreen(onTrackClicked: (track: Track) -> Unit) {
         when (tabIndex) {
             0 -> AboutScreen()
             1 -> {
-                EasyTracksScreen(onTrackClicked)
+                EasyTracksScreen()
             }
             2 -> {
-                HardTracksScreen(onTrackClicked)
+                HardTracksScreen()
             }
         }
     }
@@ -156,20 +131,34 @@ fun TabScreen(onTrackClicked: (track: Track) -> Unit) {
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun HardTracksScreen(onTrackClicked: (track: Track) -> Unit) {
+fun HardTracksScreen() {
     val tracks: List<Track> = listOf(
         Track(
-            "Trasa 1",
-            "Opis 1",
-            R.drawable.track1
+            "Trasa 7",
+            "Opis 7",
+            R.drawable.trasa_7
         ),
-        Track( "Trasa 2",
-            "Opis 2",
-            R.drawable.track2
+        Track( "Trasa 8",
+            "Opis 8",
+            R.drawable.trasa_8
         ),
-        Track( "Trasa 3",
-            "Opis 3",
-            R.drawable.track3)
+        Track( "Trasa 9",
+            "Opis 9",
+            R.drawable.trasa_9
+        ),
+        Track(
+            "Trasa 10",
+                "Opis 10",
+            R.drawable.trasa_10
+        ),
+        Track( "Trasa 11",
+            "Opis 11",
+            R.drawable.trasa_11
+        ),
+        Track( "Trasa 12",
+            "Opis 12",
+            R.drawable.trasa_12
+        )
     )
 
     val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
@@ -184,7 +173,9 @@ fun HardTracksScreen(onTrackClicked: (track: Track) -> Unit) {
             AnimatedPane {
                 CardList(
                     tracks = tracks,
-                    onTrackClicked = onTrackClicked
+                    onTrackClicked = {
+                        navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                    }
                 )
             }
         },
@@ -215,30 +206,66 @@ fun CardList(tracks: List<Track>, onTrackClicked: (track: Track) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun EasyTracksScreen(onTrackClicked: (track: Track) -> Unit) {
+fun EasyTracksScreen() {
 
     val tracks: List<Track> = listOf(
         Track(
             "Trasa 1",
             "Opis 1",
-            R.drawable.track1
+            R.drawable.trasa_1
         ),
         Track( "Trasa 2",
             "Opis 2",
-            R.drawable.track2
+            R.drawable.trasa_2
         ),
         Track( "Trasa 3",
             "Opis 3",
-            R.drawable.track3)
+            R.drawable.trasa_3
+        ),
+        Track(
+            "Trasa 4",
+            "Opis 4",
+            R.drawable.trasa_4
+        ),
+        Track( "Trasa 5",
+            "Opis 5",
+            R.drawable.trasa_5
+        ),
+        Track( "Trasa 6",
+            "Opis 6",
+            R.drawable.trasa_6
+        )
     )
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 128.dp)
-    ) {
-        items(tracks) { track ->
-            TrackItem(track, onTrackClicked)
-        }
+
+    val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
+    BackHandler(navigator.canNavigateBack()) {
+        navigator.navigateBack()
     }
+
+    ListDetailPaneScaffold(
+        directive = navigator.scaffoldDirective,
+        value = navigator.scaffoldValue,
+        listPane = {
+            AnimatedPane {
+                CardList(
+                    tracks = tracks,
+                    onTrackClicked = {
+                        navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                    }
+                )
+            }
+        },
+
+        detailPane = {
+            AnimatedPane {
+                navigator.currentDestination?.content?.let {
+                    Text("Detale")
+                }
+            }
+        },
+    )
 
 }
 
