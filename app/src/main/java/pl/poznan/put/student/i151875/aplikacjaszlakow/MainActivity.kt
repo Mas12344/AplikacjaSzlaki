@@ -1,6 +1,7 @@
 package pl.poznan.put.student.i151875.aplikacjaszlakow
 
 import android.os.Bundle
+import android.os.Parcel
 import android.os.Parcelable
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -42,6 +43,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -50,11 +52,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.tooling.preview.Preview
+import java.io.Serializable
+import java.sql.Timestamp
+import java.util.Calendar
+import java.util.Date
 import kotlin.reflect.KProperty
 
 class MainActivity : ComponentActivity() {
@@ -106,13 +115,65 @@ class DetailsScreenState(t: Track, tvm: TimerViewModel) {
 
 }
 
-//TODO ListDetailPaneScaffold
+
+
+val DetailPanelCompositeSaver = listSaver<MutableList<DetailPanelComposite>, String>(
+    save = { list ->
+        list.map { dpc ->
+            "${dpc.track.id},${dpc.track.photo},${dpc.track.name},${dpc.track.description}," +
+                    "${dpc.timerState.value},${dpc.timerState.exitTimestamp},${dpc.timerState.isPaused}"
+        }
+    },
+    restore = { list ->
+        list.mapTo(mutableListOf()) { item ->
+            val parts = item.split(',')
+            val track = Track(parts[0].toInt(), parts[1].toInt(), parts[2], parts[3])
+            val timerState = MyTimerState(parts[4].toLong(), parts[5].toLong(), parts[6].toBoolean())
+            DetailPanelComposite(track, timerState)
+        }
+    }
+)
 
 @Composable
 fun TabScreen() {
+
+    val initialDpcs = listOf(
+        DetailPanelComposite(
+        Track(7, R.drawable.trasa_7, "Trasa 7", "Opis 7"),
+        MyTimerState(0, 0L, true)
+        ),
+        DetailPanelComposite(
+        Track(8, R.drawable.trasa_8, "Trasa 8", "Opis 8"),
+        MyTimerState(0, 0L, true)
+        ),
+        DetailPanelComposite(
+        Track(9, R.drawable.trasa_9, "Trasa 9", "Opis 9"),
+        MyTimerState(0, 0L, true)
+        ),
+        DetailPanelComposite(
+        Track(10, R.drawable.trasa_10, "Trasa 10", "Opis 10"),
+        MyTimerState(0, 0L, true)
+        ),
+        DetailPanelComposite(
+        Track(11, R.drawable.trasa_11, "Trasa 11", "Opis 11"),
+        MyTimerState(0, 0L, true)
+        ),
+        DetailPanelComposite(
+        Track(12, R.drawable.trasa_12, "Trasa 12", "Opis 12"),
+        MyTimerState(0, 0L, true)
+        )
+    )
+
+
+    val dpcs = rememberSaveable(saver = DetailPanelCompositeSaver) {
+        mutableStateListOf(*initialDpcs.toTypedArray())
+    }
+
     var tabIndex by rememberSaveable { mutableStateOf(0) }
 
     val tabs = listOf("O Aplikacji", "Łatwe trasy", "Trudne trasy")
+
+
 
     Column(modifier = Modifier.fillMaxWidth()) {
         TabRow(selectedTabIndex = tabIndex) {
@@ -133,57 +194,23 @@ fun TabScreen() {
         when (tabIndex) {
             0 -> AboutScreen()
             1 -> {
-                EasyTracksScreen()
+                EasyTracksScreen(dpcs)
             }
             2 -> {
-                EasyTracksScreen()
+                EasyTracksScreen(dpcs)
             }
         }
     }
 }
 
 
+
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun EasyTracksScreen() {
+fun EasyTracksScreen(dpcs: MutableList<DetailPanelComposite>) {
 
-    val tracks: List<Track> = listOf(
-        Track( 7,
-            R.drawable.trasa_7,
-            "Trasa 7",
-            "Opis 7",
-        ),
-        Track( 8,
-            R.drawable.trasa_8,
-            "Trasa 8",
-            "Opis 8",
-        ),
-        Track( 9,
-            R.drawable.trasa_9,
-            "Trasa 9",
-            "Opis 9",
-        ),
-        Track( 10,
-            R.drawable.trasa_10,
-            "Trasa 10",
-            "Opis 10",
-        ),
-        Track( 11,
-            R.drawable.trasa_11,
-            "Trasa 11",
-            "Opis 11",
-        ),
-        Track(  12,
-            R.drawable.trasa_12,
-            "Trasa 12",
-            "Opis 12",
-
-        )
-    )
-
-
-    var selectedTrack by rememberSaveable() {
-        mutableStateOf(7)
+    var selecteddpcindex by rememberSaveable() {
+        mutableStateOf(0)
     }
 
     val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
@@ -196,8 +223,8 @@ fun EasyTracksScreen() {
         scaffoldState = navigator.scaffoldState,
         listPane = {
             AnimatedPane(Modifier) {
-                TrackGrid(tracks) { track ->
-                    selectedTrack = track.id
+                TrackGrid(dpcs) {
+                    selecteddpcindex = it
                     navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
                 }
             }
@@ -205,12 +232,8 @@ fun EasyTracksScreen() {
 
         detailPane = {
             AnimatedPane(Modifier) {
-                selectedTrack.let { track ->
-                    val trck = tracks.find { t ->
-                        t.id == track
-                    }
-                    TrackDetail(trck!!)
-
+                selecteddpcindex.let { index ->
+                    TrackDetail(dpcs, index)
                 }
             }
         },
@@ -218,11 +241,6 @@ fun EasyTracksScreen() {
 
 }
 
-@Preview
-@Composable
-fun EasyTracksPreview() {
-    EasyTracksScreen()
-}
 
 @Composable
 fun TrackItem(track: Track, onClick: () -> Unit) {
@@ -245,8 +263,21 @@ fun TrackItem(track: Track, onClick: () -> Unit) {
 }
 
 @Composable
-fun TrackDetail(track: Track) {
-    Column(modifier = Modifier.padding(16.dp)) {
+fun TrackDetail(dpcs: MutableList<DetailPanelComposite>, index: Int) {
+    val track = dpcs[index].track
+    val tvm = TimerViewModel(dpcs[index].timerState.value, dpcs[index].timerState.exitTimestamp, dpcs[index].timerState.isPaused)
+
+    DisposableEffect(tvm) {
+        onDispose {
+            dpcs[index].timerState.value = tvm.getTime()
+            dpcs[index].timerState.exitTimestamp = Calendar.getInstance().time.time
+            dpcs[index].timerState.isPaused = true
+        }
+    }
+
+    Column(modifier = Modifier
+        .padding(16.dp)
+        .verticalScroll(rememberScrollState())) {
         androidx.compose.foundation.Image(
             painter = painterResource(id = track.photo),
             contentDescription = null,
@@ -258,20 +289,22 @@ fun TrackDetail(track: Track) {
         Text(text = track.name, style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = track.description, style = MaterialTheme.typography.bodyLarge)
+        Spacer(modifier = Modifier.height(8.dp))
+        MyTimerContent(timerViewModel = tvm)
     }
 }
 
 @Composable
-fun TrackGrid(tracks: List<Track>, onTrackSelected: (Track) -> Unit) {
+fun TrackGrid(dpcs: List<DetailPanelComposite>, onTrackSelected: (Int) -> Unit) {
     Row {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(128.dp),
             contentPadding = PaddingValues(8.dp),
             modifier = Modifier.width(150.dp)
         ) {
-            items(tracks.size) { index ->
-                TrackItem(track = tracks[index]) {
-                    onTrackSelected(tracks[index])
+            items(dpcs.size) { index ->
+                TrackItem(track = dpcs[index].track) {
+                    onTrackSelected(index)
                 }
             }
         }
@@ -284,7 +317,18 @@ data class Track(
     val photo: Int,
     val name: String,
     val description: String
-)
+) : Serializable
+
+data class MyTimerState(
+    var value: Long,
+    var exitTimestamp: Long,
+    var isPaused: Boolean
+) : Serializable
+
+data class DetailPanelComposite(
+    val track: Track,
+    var timerState: MyTimerState
+) : Serializable
 
 @Composable
 fun AboutScreen() {

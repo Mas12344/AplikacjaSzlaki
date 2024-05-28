@@ -14,29 +14,24 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Calendar
 
-
-
-
-@Composable
-fun DetailsContent(track: Track) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
-        Text(text= track.name)
-        Text(text = track.description)
-
-    }
-
-}
 
 fun Long.formatTime(): String {
     val hours = this / 3600
     val minutes = (this % 3600) / 60
     val remainingSeconds = this % 60
     return String.format("%02d:%02d:%02d", hours, minutes, remainingSeconds)
+}
+
+@Preview
+@Composable
+fun MyTimerContentPrev() {
+    val mts = MyTimerState(1, Calendar.getInstance().time.time-1, true)
+    MyTimerContent(TimerViewModel(mts.value, mts.exitTimestamp, mts.isPaused))
 }
 
 @Composable

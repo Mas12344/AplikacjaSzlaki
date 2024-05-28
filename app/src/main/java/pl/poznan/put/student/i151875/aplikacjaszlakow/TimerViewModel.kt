@@ -8,14 +8,24 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.sql.Time
+import java.sql.Timestamp
+import java.util.Calendar
+import java.util.Date
 
-class TimerViewModel : ViewModel() {
+class TimerViewModel(initvalue: Long = 0L, exitts: Long = Calendar.getInstance().time.time, isPaused: Boolean = true) : ViewModel() {
     private val _timer = MutableStateFlow(0L)
     val timer = _timer.asStateFlow()
 
     private var timerJob: Job? = null
-    private var selectedTrack: Track? = null
 
+    init {
+        _timer.value = initvalue
+        if(!isPaused) {
+            _timer.value += Calendar.getInstance().time.time - exitts
+            startTimer()
+        }
+    }
     fun startTimer() {
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
@@ -24,6 +34,10 @@ class TimerViewModel : ViewModel() {
                 _timer.value++
             }
         }
+    }
+
+    fun getTime(): Long {
+        return _timer.value
     }
 
     fun pauseTimer() {
@@ -35,56 +49,8 @@ class TimerViewModel : ViewModel() {
         timerJob?.cancel()
     }
 
-    fun setSelectedTrack(track: Track) {
-        selectedTrack = track
-    }
-
-    fun getTrackByName(name: String): Track? {
-        return if (selectedTrack?.name == name) selectedTrack else null
-    }
-
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
     }
-}
-
-class TrackTimerViewModelFactory(
-    private val track: Track,
-    private val parentViewModel: TimerViewModel
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return modelClass.cast(TrackTimerViewModel(track, parentViewModel))!!
-    }
-}
-
-class TrackTimerViewModel(
-    private val track: Track,
-    private val parentViewModel: TimerViewModel
-) : ViewModel() {
-    private val _timer = MutableStateFlow(0L)
-    val timer = _timer.asStateFlow()
-
-    private var timerJob: Job? = null
-
-    init {
-        startTimer()
-    }
-
-    private fun startTimer() {
-        timerJob?.cancel()
-        timerJob = viewModelScope.launch {
-            while (true) {
-                delay(1000)
-                _timer.value++
-                parentViewModel.setSelectedTrack(track)
-            }
-        }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        timerJob?.cancel()
-    }
-
 }
