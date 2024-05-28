@@ -74,8 +74,8 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.9.0")
     implementation("androidx.fragment:fragment-ktx:1.7.0")
 
-    implementation("androidx.compose.material3.adaptive:adaptive:1.0.0-alpha12")
-    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.0.0-alpha12")
-    implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.0.0-alpha12")
+    implementation("androidx.compose.material3.adaptive:adaptive:1.0.0-alpha07")
+    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.0.0-alpha07")
+    implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.0.0-alpha07")
 
 }

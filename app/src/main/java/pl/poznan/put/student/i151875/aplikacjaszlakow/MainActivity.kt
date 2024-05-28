@@ -1,6 +1,7 @@
 package pl.poznan.put.student.i151875.aplikacjaszlakow
 
 import android.os.Bundle
+import android.os.Parcelable
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,8 +30,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
-import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 
 
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,7 +41,21 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.ui.tooling.preview.Preview
+import kotlin.reflect.KProperty
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,145 +136,81 @@ fun TabScreen() {
                 EasyTracksScreen()
             }
             2 -> {
-                HardTracksScreen()
+                EasyTracksScreen()
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
-@Composable
-fun HardTracksScreen() {
-    val tracks: List<Track> = listOf(
-        Track(
-            "Trasa 7",
-            "Opis 7",
-            R.drawable.trasa_7
-        ),
-        Track( "Trasa 8",
-            "Opis 8",
-            R.drawable.trasa_8
-        ),
-        Track( "Trasa 9",
-            "Opis 9",
-            R.drawable.trasa_9
-        ),
-        Track(
-            "Trasa 10",
-                "Opis 10",
-            R.drawable.trasa_10
-        ),
-        Track( "Trasa 11",
-            "Opis 11",
-            R.drawable.trasa_11
-        ),
-        Track( "Trasa 12",
-            "Opis 12",
-            R.drawable.trasa_12
-        )
-    )
-
-    val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
-    BackHandler(navigator.canNavigateBack()) {
-        navigator.navigateBack()
-    }
-
-    ListDetailPaneScaffold(
-        directive = navigator.scaffoldDirective,
-        value = navigator.scaffoldValue,
-        listPane = {
-            AnimatedPane {
-                CardList(
-                    tracks = tracks,
-                    onTrackClicked = {
-                        navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                    }
-                )
-            }
-        },
-
-        detailPane = {
-            AnimatedPane {
-                navigator.currentDestination?.content?.let {
-                    Text("Detale")
-                }
-            }
-        },
-    )
-    
-    
-}
-
-
-
-
-@Composable
-fun CardList(tracks: List<Track>, onTrackClicked: (track: Track) -> Unit) {
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 128.dp)
-    ) {
-        items(tracks) { track ->
-            TrackItem(track, onTrackClicked)
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun EasyTracksScreen() {
 
     val tracks: List<Track> = listOf(
-        Track(
-            "Trasa 1",
-            "Opis 1",
-            R.drawable.trasa_1
+        Track( 7,
+            R.drawable.trasa_7,
+            "Trasa 7",
+            "Opis 7",
         ),
-        Track( "Trasa 2",
-            "Opis 2",
-            R.drawable.trasa_2
+        Track( 8,
+            R.drawable.trasa_8,
+            "Trasa 8",
+            "Opis 8",
         ),
-        Track( "Trasa 3",
-            "Opis 3",
-            R.drawable.trasa_3
+        Track( 9,
+            R.drawable.trasa_9,
+            "Trasa 9",
+            "Opis 9",
         ),
-        Track(
-            "Trasa 4",
-            "Opis 4",
-            R.drawable.trasa_4
+        Track( 10,
+            R.drawable.trasa_10,
+            "Trasa 10",
+            "Opis 10",
         ),
-        Track( "Trasa 5",
-            "Opis 5",
-            R.drawable.trasa_5
+        Track( 11,
+            R.drawable.trasa_11,
+            "Trasa 11",
+            "Opis 11",
         ),
-        Track( "Trasa 6",
-            "Opis 6",
-            R.drawable.trasa_6
+        Track(  12,
+            R.drawable.trasa_12,
+            "Trasa 12",
+            "Opis 12",
+
         )
     )
+
+
+    var selectedTrack by rememberSaveable() {
+        mutableStateOf(7)
+    }
 
     val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
     BackHandler(navigator.canNavigateBack()) {
         navigator.navigateBack()
     }
 
+
     ListDetailPaneScaffold(
-        directive = navigator.scaffoldDirective,
-        value = navigator.scaffoldValue,
+        scaffoldState = navigator.scaffoldState,
         listPane = {
-            AnimatedPane {
-                CardList(
-                    tracks = tracks,
-                    onTrackClicked = {
-                        navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                    }
-                )
+            AnimatedPane(Modifier) {
+                TrackGrid(tracks) { track ->
+                    selectedTrack = track.id
+                    navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                }
             }
         },
 
         detailPane = {
-            AnimatedPane {
-                navigator.currentDestination?.content?.let {
-                    Text("Detale")
+            AnimatedPane(Modifier) {
+                selectedTrack.let { track ->
+                    val trck = tracks.find { t ->
+                        t.id == track
+                    }
+                    TrackDetail(trck!!)
+
                 }
             }
         },
@@ -269,26 +218,73 @@ fun EasyTracksScreen() {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Preview
 @Composable
-fun TrackItem(track: Track, onTrackClicked: (track: Track) -> Unit) {
+fun EasyTracksPreview() {
+    EasyTracksScreen()
+}
 
-    Card(onClick = {
-        Log.d("Card item", "clicked")
-        onTrackClicked(track)
+@Composable
+fun TrackItem(track: Track, onClick: () -> Unit) {
+    Card(modifier = Modifier
+        .padding(2.dp)
+        .clickable { onClick() }
 
-    }) {
-        androidx.compose.foundation.Image(painter = painterResource(track.photo) , contentDescription = "")
-        Text(text = track.name)
+    ) {
+
+        androidx.compose.foundation.Image(
+            painter = painterResource(id = track.photo),
+            contentDescription = null,
+            modifier = Modifier
+                .height(128.dp)
+                .fillMaxWidth()
+        )
+        Text(text = track.name, style = MaterialTheme.typography.labelMedium)
+
+    }
+}
+
+@Composable
+fun TrackDetail(track: Track) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        androidx.compose.foundation.Image(
+            painter = painterResource(id = track.photo),
+            contentDescription = null,
+            modifier = Modifier
+                .height(200.dp)
+                .fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = track.name, style = MaterialTheme.typography.headlineSmall)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = track.description, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
+fun TrackGrid(tracks: List<Track>, onTrackSelected: (Track) -> Unit) {
+    Row {
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(128.dp),
+            contentPadding = PaddingValues(8.dp),
+            modifier = Modifier.width(150.dp)
+        ) {
+            items(tracks.size) { index ->
+                TrackItem(track = tracks[index]) {
+                    onTrackSelected(tracks[index])
+                }
+            }
+        }
     }
 }
 
 
-class Track(name: String, description: String, photo: Int) {
-    var name: String = name
-    var description: String = description
-    var photo: Int = photo
-}
+data class Track(
+    val id: Int,
+    val photo: Int,
+    val name: String,
+    val description: String
+)
 
 @Composable
 fun AboutScreen() {
