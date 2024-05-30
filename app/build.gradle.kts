@@ -78,4 +78,7 @@ dependencies {
     implementation("androidx.compose.material3.adaptive:adaptive-layout:1.0.0-alpha07")
     implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.0.0-alpha07")
 
+    implementation("com.google.accompanist:accompanist-pager:0.24.7-alpha")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.24.7-alpha")
+
 }

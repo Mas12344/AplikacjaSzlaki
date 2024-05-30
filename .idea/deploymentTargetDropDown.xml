@@ -5,7 +5,13 @@
       <entry key="MyTimerContentPrev">
         <State />
       </entry>
+      <entry key="TestNavig">
+        <State />
+      </entry>
       <entry key="app">
+        <State />
+      </entry>
+      <entry key="td">
         <State />
       </entry>
     </value>
