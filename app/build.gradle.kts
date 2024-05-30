@@ -81,4 +81,7 @@ dependencies {
     implementation("com.google.accompanist:accompanist-pager:0.24.7-alpha")
     implementation("com.google.accompanist:accompanist-pager-indicators:0.24.7-alpha")
 
+    implementation("io.coil-kt:coil-compose:2.0.0")
+    implementation("com.google.accompanist:accompanist-coil:0.15.0")
+
 }

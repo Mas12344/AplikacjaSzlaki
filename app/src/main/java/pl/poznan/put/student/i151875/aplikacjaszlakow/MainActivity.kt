@@ -1,19 +1,15 @@
 package pl.poznan.put.student.i151875.aplikacjaszlakow
 
-import android.content.pm.PackageManager
-import android.net.Uri
+import android.graphics.PathMeasure
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.*
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.ThumbUp
@@ -26,67 +22,54 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
-
-
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.res.painterResource
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.TweenSpec
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.DraggableState
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
+import androidx.core.graphics.PathParser
+import coil.compose.rememberAsyncImagePainter
 import java.io.Serializable
-import java.sql.Timestamp
 import java.util.Calendar
-import java.util.Date
-import kotlin.reflect.KProperty
-
 import com.google.accompanist.pager.*
 import kotlinx.coroutines.launch
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 
 class MainActivity : ComponentActivity() {
@@ -202,8 +185,8 @@ fun TabNavigationScreen() {
 @Composable
 fun EasyTracksScreen(dpcs: MutableList<DetailPanelComposite>) {
 
-    var selecteddpcindex by rememberSaveable() {
-        mutableStateOf(0)
+    var selecteddpcindex by rememberSaveable {
+        mutableIntStateOf(0)
     }
 
     val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
@@ -225,9 +208,7 @@ fun EasyTracksScreen(dpcs: MutableList<DetailPanelComposite>) {
 
         detailPane = {
             AnimatedPane(Modifier) {
-                selecteddpcindex.let { index ->
-                    TrackDetail(dpcs, index)
-                }
+                TrackDetail(dpcs, selecteddpcindex)
             }
         },
     )
@@ -243,7 +224,7 @@ fun TrackItem(track: Track, onClick: () -> Unit) {
 
     ) {
 
-        androidx.compose.foundation.Image(
+        Image(
             painter = painterResource(id = track.photo),
             contentDescription = null,
             modifier = Modifier
@@ -255,9 +236,10 @@ fun TrackItem(track: Track, onClick: () -> Unit) {
     }
 }
 
+
 @Preview
 @Composable
-fun td() {
+fun Td() {
     val initialDpcs = listOf(
         DetailPanelComposite(
             Track(7, R.drawable.trasa_7, "Trasa 7", "Opis 7"),
@@ -301,7 +283,7 @@ fun TrackDetail(dpcs: MutableList<DetailPanelComposite>, index: Int) {
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
+    ) {
         Toast.makeText(context, "Zdjęcie zrobione!", Toast.LENGTH_SHORT).show()
     }
 
@@ -395,5 +377,91 @@ data class DetailPanelComposite(
 
 @Composable
 fun AboutScreen() {
-    Text(text= "Aplikacja Tras", Modifier.fillMaxSize())
+
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Text(text= "Aplikacja Tras", Modifier.fillMaxSize())
+        HikingAnimation()
+    }
+}
+
+@Preview
+@Composable
+fun AS() {
+    AboutScreen()
+}
+
+val trailPoints = listOf(
+    Pair(0f, 50f),
+    Pair(50f, 40f),
+    Pair(100f, 30f),
+    Pair(150f, 20f),
+    Pair(200f, 40f),
+    Pair(250f, 60f),
+    Pair(300f, 50f),
+    Pair(350f, 45f),
+    Pair(400f, 50f)
+)
+
+// Linear interpolation function
+fun interpolate(points: List<Pair<Float, Float>>, progress: Float): Pair<Float, Float> {
+    val segmentLength = 1f / (points.size - 1)
+    val segmentIndex = (progress / segmentLength).toInt()
+    val segmentProgress = (progress % segmentLength) / segmentLength
+
+    val start = points[segmentIndex]
+    val end = points[segmentIndex + 1]
+
+    val x = start.first + (end.first - start.first) * segmentProgress
+    val y = start.second + (end.second - start.second) * segmentProgress
+
+    return Pair(x, y)
+}
+@Composable
+fun HikingAnimation() {
+    var targetProgress by remember { mutableStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            targetProgress = 1f
+            kotlinx.coroutines.delay(4000)
+            targetProgress = 0f
+            kotlinx.coroutines.delay(4000)
+        }
+    }
+
+    val progress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = TweenSpec(durationMillis = 4000, easing = LinearEasing)
+    )
+
+    // Parse the path data from the XML
+    val pathData = "M0,50Q150,0 300,50T400,50"
+    val path = PathParser.createPathFromPathData(pathData)
+
+    // Use PathMeasure to get the position along the path
+    val pathMeasure = PathMeasure(path, false)
+    val pathLength = pathMeasure.length
+    val pos = floatArrayOf(0f, 0f)
+
+    pathMeasure.getPosTan(progress * pathLength, pos, null)
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.trail),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .wrapContentSize(),
+            contentScale = ContentScale.FillWidth
+        )
+        Image(
+            painter = painterResource(id = R.drawable.hiker),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .size(48.dp)
+                .offset(x = pos[0].dp-24.dp, y = pos[1].dp+245.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+    }
 }
