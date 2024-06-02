@@ -457,9 +457,9 @@ fun HikingAnimation() {
             painter = painterResource(id = R.drawable.hiker),
             contentDescription = null,
             modifier = Modifier
-                .align(Alignment.TopStart)
+                .align(Alignment.BottomStart)
                 .size(48.dp)
-                .offset(x = pos[0].dp-24.dp, y = pos[1].dp+245.dp)
+                .offset(x = pos[0].dp-24.dp, y = pos[1].dp-410.dp)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop
         )
