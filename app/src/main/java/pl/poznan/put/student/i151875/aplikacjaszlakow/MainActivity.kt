@@ -34,6 +34,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -59,11 +60,15 @@ import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode.Companion.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.PathParser
 import coil.compose.rememberAsyncImagePainter
 import java.io.Serializable
@@ -91,13 +96,13 @@ class MainActivity : ComponentActivity() {
 val DetailPanelCompositeSaver = listSaver<MutableList<DetailPanelComposite>, String>(
     save = { list ->
         list.map { dpc ->
-            "${dpc.track.id},${dpc.track.photo},${dpc.track.name},${dpc.track.description}," +
-                    "${dpc.timerState.value},${dpc.timerState.exitTimestamp},${dpc.timerState.isPaused}"
+            "${dpc.track.id};${dpc.track.photo};${dpc.track.name};${dpc.track.description};" +
+                    "${dpc.timerState.value};${dpc.timerState.exitTimestamp};${dpc.timerState.isPaused}"
         }
     },
     restore = { list ->
         list.mapTo(mutableListOf()) { item ->
-            val parts = item.split(',')
+            val parts = item.split(';')
             val track = Track(parts[0].toInt(), parts[1].toInt(), parts[2], parts[3])
             val timerState = MyTimerState(parts[4].toLong(), parts[5].toLong(), parts[6].toBoolean())
             DetailPanelComposite(track, timerState)
@@ -113,35 +118,65 @@ fun TabNavigationScreen() {
     val pagerState = rememberPagerState()
     val coroutineScope = rememberCoroutineScope()
 
-    val initialDpcs = listOf(
+    val initialEasyDpcs = listOf(
         DetailPanelComposite(
-            Track(7, R.drawable.trasa_7, "Trasa 7", "Opis 7"),
+            Track(1, R.drawable.trasa_1, "Szlak Leśnych Opowieści", "Ten 5-kilometrowy szlak wiedzie przez malownicze lasy sosnowe i brzozowe, oferując piękne widoki na otaczającą przyrodę. Trasa jest płaska i dobrze oznakowana, idealna dla rodzin z dziećmi."),
             MyTimerState(0, 0L, true)
         ),
         DetailPanelComposite(
-            Track(8, R.drawable.trasa_8, "Trasa 8", "Opis 8"),
+            Track(2, R.drawable.trasa_2, "Ścieżka Ptasiego Śpiewu", "4-kilometrowa trasa prowadząca przez tereny chronione, gdzie można obserwować różnorodne gatunki ptaków. Ścieżka jest szeroka i łatwo dostępna, z licznymi punktami obserwacyjnymi."),
             MyTimerState(0, 0L, true)
         ),
         DetailPanelComposite(
-            Track(9, R.drawable.trasa_9, "Trasa 9", "Opis 9"),
+            Track(3, R.drawable.trasa_3, "Szlak Sielskich Wzgórz", "Krótka, 3-kilometrowa trasa po łagodnych, zielonych wzgórzach. Idealna na krótki spacer wśród kwitnących łąk i polnych kwiatów. Na trasie znajdują się ławeczki i tablice informacyjne."),
             MyTimerState(0, 0L, true)
         ),
         DetailPanelComposite(
-            Track(10, R.drawable.trasa_10, "Trasa 10", "Opis 10"),
+            Track(4, R.drawable.trasa_4, "Ścieżka Nadmorskiej Bryzy", "Spacerowy szlak o długości 4,5 km biegnący wzdłuż wybrzeża Morza Bałtyckiego. Delikatny morski wiatr i piękne widoki na morze czynią tę trasę wyjątkowo relaksującą."),
             MyTimerState(0, 0L, true)
         ),
         DetailPanelComposite(
-            Track(11, R.drawable.trasa_11, "Trasa 11", "Opis 11"),
+            Track(5, R.drawable.trasa_5, "Trasa Jeziornych Krajobrazów", "5-kilometrowa ścieżka wokół malowniczego jeziora, idealna na spokojne wędrówki. Trasa jest płaska i biegnie wzdłuż brzegu, oferując miejsca do piknikowania."),
             MyTimerState(0, 0L, true)
         ),
         DetailPanelComposite(
-            Track(12, R.drawable.trasa_12, "Trasa 12", "Opis 12"),
+            Track(6, R.drawable.trasa_6, "Szlak Leśnych Wspomnień", "4-kilometrowa trasa przez historyczny las, gdzie można natknąć się na starożytne ruiny i pozostałości dawnych osad. Szlak jest łatwy i odpowiedni dla wszystkich grup wiekowych."),
             MyTimerState(0, 0L, true)
         )
     )
-    val dpcs = rememberSaveable(saver = DetailPanelCompositeSaver) {
-        mutableStateListOf(*initialDpcs.toTypedArray())
+    val dpcsEasy = rememberSaveable(saver = DetailPanelCompositeSaver) {
+        mutableStateListOf(*initialEasyDpcs.toTypedArray())
     }
+    val initialHardDpcs = listOf(
+        DetailPanelComposite(
+            Track(7, R.drawable.trasa_7, "Wielka Pętla Tatrzańska", "25-kilometrowa, wymagająca trasa prowadząca przez najwyższe partie Tatr. Szlak obejmuje strome podejścia, wąskie przejścia i ekspozycje, a także przejścia przez wysokogórskie przełęcze."),
+            MyTimerState(0, 0L, true)
+        ),
+        DetailPanelComposite(
+            Track(8, R.drawable.trasa_8, "Szlak Orlich Skał", "20-kilometrowa trasa biegnąca przez skaliste i strome tereny z licznymi przewyższeniami. Szlak jest pełen wyzwań technicznych i wymaga dobrej kondycji fizycznej."),
+            MyTimerState(0, 0L, true)
+        ),
+        DetailPanelComposite(
+            Track(9, R.drawable.trasa_9, "Wędrówka Po Dziewiczych Grani", "18-kilometrowa trasa przez surowe i dzikie tereny górskie, z minimalnymi oznaczeniami i trudnymi warunkami terenowymi. Wymaga doświadczenia i umiejętności nawigacyjnych."),
+            MyTimerState(0, 0L, true)
+        ),
+        DetailPanelComposite(
+            Track(10, R.drawable.trasa_10, "Ekstremalna Przygoda Karpacka", "22-kilometrowy szlak prowadzący przez niezamieszkane i dzikie tereny Karpat. Trasa jest pełna stromych podejść, skalistych odcinków i wymaga dobrej orientacji w terenie."),
+            MyTimerState(0, 0L, true)
+        ),
+        DetailPanelComposite(
+            Track(11, R.drawable.trasa_11, "Szlak Górskich Wyzwań", "23-kilometrowa trasa wiodąca przez wymagające technicznie odcinki górskie, z licznymi ekspozycjami i przepaściami. Odpowiednia dla doświadczonych hikerów."),
+            MyTimerState(0, 0L, true)
+        ),
+        DetailPanelComposite(
+            Track(12, R.drawable.trasa_12, "Wielka Korona Beskidów", "26-kilometrowy szlak przez najwyższe szczyty Beskidów, z dużymi różnicami wysokości i trudnymi warunkami terenowymi. Wymaga znakomitej kondycji fizycznej i przygotowania."),
+            MyTimerState(0, 0L, true)
+        )
+    )
+    val dpcsHard = rememberSaveable(saver = DetailPanelCompositeSaver) {
+        mutableStateListOf(*initialHardDpcs.toTypedArray())
+    }
+
 
     Column(modifier = Modifier.fillMaxWidth()) {
         TabRow(
@@ -173,8 +208,8 @@ fun TabNavigationScreen() {
         ) { page ->
             when (page) {
                 0 -> AboutScreen()
-                1 -> EasyTracksScreen(dpcs)
-                2 -> EasyTracksScreen(dpcs)
+                1 -> EasyTracksScreen(dpcsEasy)
+                2 -> EasyTracksScreen(dpcsHard)
             }
         }
     }
@@ -184,7 +219,6 @@ fun TabNavigationScreen() {
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun EasyTracksScreen(dpcs: MutableList<DetailPanelComposite>) {
-
     var selecteddpcindex by rememberSaveable {
         mutableIntStateOf(0)
     }
@@ -356,7 +390,6 @@ fun TrackGrid(dpcs: List<DetailPanelComposite>, onTrackSelected: (Int) -> Unit) 
     }
 }
 
-
 data class Track(
     val id: Int,
     val photo: Int,
@@ -379,7 +412,16 @@ data class DetailPanelComposite(
 fun AboutScreen() {
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Text(text= "Aplikacja Tras", Modifier.fillMaxSize())
+        Text(
+            text = "Aplikacja umożliwia przeglądanie i odkrywanie różnorodnych tras hikingowych o różnym stopniu trudności. Użytkownicy mogą przeglądać szczegółowe opisy tras, oglądać zdjęcia oraz śledzić swoje postępy na mapie. Aplikacja oferuje także funkcje rejestrowania czasu oraz dzielenia się wrażeniami z innymi użytkownikami.",
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            color = androidx.compose.ui.graphics.Color.Black,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Normal,
+            textAlign = TextAlign.Justify
+        )
         HikingAnimation()
     }
 }
@@ -390,32 +432,6 @@ fun AS() {
     AboutScreen()
 }
 
-val trailPoints = listOf(
-    Pair(0f, 50f),
-    Pair(50f, 40f),
-    Pair(100f, 30f),
-    Pair(150f, 20f),
-    Pair(200f, 40f),
-    Pair(250f, 60f),
-    Pair(300f, 50f),
-    Pair(350f, 45f),
-    Pair(400f, 50f)
-)
-
-// Linear interpolation function
-fun interpolate(points: List<Pair<Float, Float>>, progress: Float): Pair<Float, Float> {
-    val segmentLength = 1f / (points.size - 1)
-    val segmentIndex = (progress / segmentLength).toInt()
-    val segmentProgress = (progress % segmentLength) / segmentLength
-
-    val start = points[segmentIndex]
-    val end = points[segmentIndex + 1]
-
-    val x = start.first + (end.first - start.first) * segmentProgress
-    val y = start.second + (end.second - start.second) * segmentProgress
-
-    return Pair(x, y)
-}
 @Composable
 fun HikingAnimation() {
     var targetProgress by remember { mutableStateOf(0f) }
