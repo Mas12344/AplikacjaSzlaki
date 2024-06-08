@@ -2,6 +2,7 @@ package pl.poznan.put.student.i151875.aplikacjaszlakow
 
 import android.graphics.PathMeasure
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,6 +31,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
@@ -70,6 +72,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.PathParser
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import java.io.Serializable
 import java.util.Calendar
@@ -78,7 +82,6 @@ import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -177,6 +180,11 @@ fun TabNavigationScreen() {
         mutableStateListOf(*initialHardDpcs.toTypedArray())
     }
 
+    LaunchedEffect(pagerState.currentPage) {
+        Log.d("tab", "zmieniony")
+
+    }
+
 
     Column(modifier = Modifier.fillMaxWidth()) {
         TabRow(
@@ -208,25 +216,27 @@ fun TabNavigationScreen() {
         ) { page ->
             when (page) {
                 0 -> AboutScreen()
-                1 -> EasyTracksScreen(dpcsEasy)
-                2 -> EasyTracksScreen(dpcsHard)
+                1 -> EasyTracksScreen(dpcsEasy, pagerState)
+                2 -> EasyTracksScreen(dpcsHard, pagerState)
             }
         }
     }
 }
 
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalPagerApi::class)
 @Composable
-fun EasyTracksScreen(dpcs: MutableList<DetailPanelComposite>) {
+fun EasyTracksScreen(dpcs: MutableList<DetailPanelComposite>, pagerState: PagerState) {
     var selecteddpcindex by rememberSaveable {
         mutableIntStateOf(0)
     }
+
 
     val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
     BackHandler(navigator.canNavigateBack()) {
         navigator.navigateBack()
     }
+
 
 
     ListDetailPaneScaffold(
@@ -271,50 +281,19 @@ fun TrackItem(track: Track, onClick: () -> Unit) {
 }
 
 
-@Preview
-@Composable
-fun Td() {
-    val initialDpcs = listOf(
-        DetailPanelComposite(
-            Track(7, R.drawable.trasa_7, "Trasa 7", "Opis 7"),
-            MyTimerState(0, 0L, true)
-        ),
-        DetailPanelComposite(
-            Track(8, R.drawable.trasa_8, "Trasa 8", "Opis 8"),
-            MyTimerState(0, 0L, true)
-        ),
-        DetailPanelComposite(
-            Track(9, R.drawable.trasa_9, "Trasa 9", "Opis 9"),
-            MyTimerState(0, 0L, true)
-        ),
-        DetailPanelComposite(
-            Track(10, R.drawable.trasa_10, "Trasa 10", "Opis 10"),
-            MyTimerState(0, 0L, true)
-        ),
-        DetailPanelComposite(
-            Track(11, R.drawable.trasa_11, "Trasa 11", "Opis 11"),
-            MyTimerState(0, 0L, true)
-        ),
-        DetailPanelComposite(
-            Track(12, R.drawable.trasa_12, "Trasa 12", "Opis 12"),
-            MyTimerState(0, 0L, true)
-        )
-    )
-    val dpcs = rememberSaveable(saver = DetailPanelCompositeSaver) {
-        mutableStateListOf(*initialDpcs.toTypedArray())
-    }
-    TrackDetail(dpcs = dpcs, index = 0)
-}
 
+@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun TrackDetail(dpcs: MutableList<DetailPanelComposite>, index: Int) {
     val track = dpcs[index].track
+    println("creating tvm")
+    println("${dpcs[index].timerState.value}")
+    println("${dpcs[index].timerState.exitTimestamp}")
+    println("${dpcs[index].timerState.isPaused}")
+
     val tvm = TimerViewModel(dpcs[index].timerState.value, dpcs[index].timerState.exitTimestamp, dpcs[index].timerState.isPaused)
-
-
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
-
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) {
@@ -323,20 +302,49 @@ fun TrackDetail(dpcs: MutableList<DetailPanelComposite>, index: Int) {
 
     DisposableEffect(tvm) {
         onDispose {
-            dpcs[index].timerState.value = tvm.getTime()
-            dpcs[index].timerState.exitTimestamp = Calendar.getInstance().time.time
-            dpcs[index].timerState.isPaused = true
+            println("======================tvn======================")
+            println("old: ${dpcs[index].timerState.value}")
+            println("old: ${dpcs[index].timerState.exitTimestamp}")
+            println("old: ${dpcs[index].timerState.isPaused}")
+            val gt = tvm.timer.value
+            val tt = Calendar.getInstance().time.time
+            val ip = true
+            println("update_value: ${gt}")
+            println("update_value: ${tt}")
+            println("update_value: ${ip}")
+            dpcs[index].timerState.value = gt
+            dpcs[index].timerState.exitTimestamp = tt
+            dpcs[index].timerState.isPaused = ip
+            println("new: ${dpcs[index].timerState.value}")
+            println("new: ${dpcs[index].timerState.exitTimestamp}")
+            println("new: ${dpcs[index].timerState.isPaused}")
+            println("++++++++++++++++++++++++++++++++++++++++++++++")
+            Log.d("orientacja", "zmiana")
         }
     }
 
-    DisposableEffect(configuration.orientation) {
-        onDispose {
-            dpcs[index].timerState.value = tvm.getTime()
-            dpcs[index].timerState.exitTimestamp = Calendar.getInstance().time.time
-            dpcs[index].timerState.isPaused = true
-
-        }
-    }
+//    DisposableEffect(configuration.orientation) {
+//        onDispose {
+//            println("====================ORIENT========================")
+//            println("old: ${dpcs[index].timerState.value}")
+//            println("old: ${dpcs[index].timerState.exitTimestamp}")
+//            println("old: ${dpcs[index].timerState.isPaused}")
+//            val gt = tvm.timer.value
+//            val tt = Calendar.getInstance().time.time
+//            val ip = true
+//            println("update_value: ${gt}")
+//            println("update_value: ${tt}")
+//            println("update_value: ${ip}")
+//            dpcs[index].timerState.value = gt
+//            dpcs[index].timerState.exitTimestamp = tt
+//            dpcs[index].timerState.isPaused = ip
+//            println("new: ${dpcs[index].timerState.value}")
+//            println("new: ${dpcs[index].timerState.exitTimestamp}")
+//            println("new: ${dpcs[index].timerState.isPaused}")
+//            println("++++++++++++++++++++++++++++++++++++++++++++++")
+//            Log.d("orientacja", "zmiana")
+//        }
+//    }
 
     Scaffold(
         floatingActionButton = {
@@ -374,7 +382,7 @@ fun TrackDetail(dpcs: MutableList<DetailPanelComposite>, index: Int) {
 }
 
 @Composable
-fun TrackGrid(dpcs: List<DetailPanelComposite>, onTrackSelected: (Int) -> Unit) {
+fun TrackGrid(dpcs: MutableList<DetailPanelComposite>, onTrackSelected: (Int) -> Unit) {
     Row {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(128.dp),
@@ -475,7 +483,7 @@ fun HikingAnimation() {
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .size(48.dp)
-                .offset(x = pos[0].dp-24.dp, y = pos[1].dp-410.dp)
+                .offset(x = pos[0].dp - 24.dp, y = pos[1].dp - 410.dp)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop
         )

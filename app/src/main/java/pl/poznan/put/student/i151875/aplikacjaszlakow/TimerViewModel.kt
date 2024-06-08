@@ -36,10 +36,6 @@ class TimerViewModel(initvalue: Long = 0L, exitts: Long = Calendar.getInstance()
         }
     }
 
-    fun getTime(): Long {
-        return _timer.value
-    }
-
     fun pauseTimer() {
         timerJob?.cancel()
     }
