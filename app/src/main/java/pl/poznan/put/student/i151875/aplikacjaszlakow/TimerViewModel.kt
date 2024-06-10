@@ -1,19 +1,32 @@
 package pl.poznan.put.student.i151875.aplikacjaszlakow
 
+import android.os.Parcel
+import android.os.Parcelable
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.sql.Time
-import java.sql.Timestamp
+import kotlinx.parcelize.Parceler
 import java.util.Calendar
-import java.util.Date
 
-class TimerViewModel(initvalue: Long = 0L, exitts: Long = Calendar.getInstance().time.time, isPaused: Boolean = true) : ViewModel() {
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
+class TimerViewModel(initvalue: Long = 0L, exitts: Long = Calendar.getInstance().time.time, isPaused: Boolean = true) : ViewModel(),
+    Parcelable {
+    private companion object : Parceler<TimerViewModel> {
+        override fun TimerViewModel.write(parcel: Parcel, flags: Int) {
+            parcel.writeLong(_timer.value)
+        }
+
+        override fun create(parcel: Parcel): TimerViewModel {
+            val initvalue = parcel.readLong()
+            return TimerViewModel(initvalue)
+        }
+    }
     private val _timer = MutableStateFlow(0L)
     val timer = _timer.asStateFlow()
 

@@ -2,7 +2,6 @@ package pl.poznan.put.student.i151875.aplikacjaszlakow
 
 import android.graphics.PathMeasure
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,12 +30,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -62,19 +59,13 @@ import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.BlendMode.Companion.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.PathParser
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import coil.compose.rememberAsyncImagePainter
 import java.io.Serializable
 import java.util.Calendar
 import com.google.accompanist.pager.*
@@ -82,18 +73,13 @@ import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             TabNavigationScreen()
         }
     }
-
-
-
 }
-
 
 
 val DetailPanelCompositeSaver = listSaver<MutableList<DetailPanelComposite>, String>(
@@ -180,12 +166,6 @@ fun TabNavigationScreen() {
         mutableStateListOf(*initialHardDpcs.toTypedArray())
     }
 
-    LaunchedEffect(pagerState.currentPage) {
-        Log.d("tab", "zmieniony")
-
-    }
-
-
     Column(modifier = Modifier.fillMaxWidth()) {
         TabRow(
             selectedTabIndex = pagerState.currentPage,
@@ -216,28 +196,25 @@ fun TabNavigationScreen() {
         ) { page ->
             when (page) {
                 0 -> AboutScreen()
-                1 -> EasyTracksScreen(dpcsEasy, pagerState)
-                2 -> EasyTracksScreen(dpcsHard, pagerState)
+                1 -> EasyTracksScreen(dpcsEasy)
+                2 -> EasyTracksScreen(dpcsHard)
             }
         }
     }
 }
 
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalPagerApi::class)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun EasyTracksScreen(dpcs: MutableList<DetailPanelComposite>, pagerState: PagerState) {
+fun EasyTracksScreen(dpcs: MutableList<DetailPanelComposite>) {
     var selecteddpcindex by rememberSaveable {
         mutableIntStateOf(0)
     }
-
 
     val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
     BackHandler(navigator.canNavigateBack()) {
         navigator.navigateBack()
     }
-
-
 
     ListDetailPaneScaffold(
         scaffoldState = navigator.scaffoldState,
@@ -267,7 +244,6 @@ fun TrackItem(track: Track, onClick: () -> Unit) {
         .clickable { onClick() }
 
     ) {
-
         Image(
             painter = painterResource(id = track.photo),
             contentDescription = null,
@@ -276,24 +252,14 @@ fun TrackItem(track: Track, onClick: () -> Unit) {
                 .fillMaxWidth()
         )
         Text(text = track.name, style = MaterialTheme.typography.labelMedium)
-
     }
 }
 
-
-
-@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun TrackDetail(dpcs: MutableList<DetailPanelComposite>, index: Int) {
     val track = dpcs[index].track
-    println("creating tvm")
-    println("${dpcs[index].timerState.value}")
-    println("${dpcs[index].timerState.exitTimestamp}")
-    println("${dpcs[index].timerState.isPaused}")
-
-    val tvm = TimerViewModel(dpcs[index].timerState.value, dpcs[index].timerState.exitTimestamp, dpcs[index].timerState.isPaused)
+    val tvm by rememberSaveable { mutableStateOf( TimerViewModel(dpcs[index].timerState.value, dpcs[index].timerState.exitTimestamp, dpcs[index].timerState.isPaused)) }
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) {
@@ -302,49 +268,14 @@ fun TrackDetail(dpcs: MutableList<DetailPanelComposite>, index: Int) {
 
     DisposableEffect(tvm) {
         onDispose {
-            println("======================tvn======================")
-            println("old: ${dpcs[index].timerState.value}")
-            println("old: ${dpcs[index].timerState.exitTimestamp}")
-            println("old: ${dpcs[index].timerState.isPaused}")
             val gt = tvm.timer.value
             val tt = Calendar.getInstance().time.time
             val ip = true
-            println("update_value: ${gt}")
-            println("update_value: ${tt}")
-            println("update_value: ${ip}")
             dpcs[index].timerState.value = gt
             dpcs[index].timerState.exitTimestamp = tt
             dpcs[index].timerState.isPaused = ip
-            println("new: ${dpcs[index].timerState.value}")
-            println("new: ${dpcs[index].timerState.exitTimestamp}")
-            println("new: ${dpcs[index].timerState.isPaused}")
-            println("++++++++++++++++++++++++++++++++++++++++++++++")
-            Log.d("orientacja", "zmiana")
         }
     }
-
-//    DisposableEffect(configuration.orientation) {
-//        onDispose {
-//            println("====================ORIENT========================")
-//            println("old: ${dpcs[index].timerState.value}")
-//            println("old: ${dpcs[index].timerState.exitTimestamp}")
-//            println("old: ${dpcs[index].timerState.isPaused}")
-//            val gt = tvm.timer.value
-//            val tt = Calendar.getInstance().time.time
-//            val ip = true
-//            println("update_value: ${gt}")
-//            println("update_value: ${tt}")
-//            println("update_value: ${ip}")
-//            dpcs[index].timerState.value = gt
-//            dpcs[index].timerState.exitTimestamp = tt
-//            dpcs[index].timerState.isPaused = ip
-//            println("new: ${dpcs[index].timerState.value}")
-//            println("new: ${dpcs[index].timerState.exitTimestamp}")
-//            println("new: ${dpcs[index].timerState.isPaused}")
-//            println("++++++++++++++++++++++++++++++++++++++++++++++")
-//            Log.d("orientacja", "zmiana")
-//        }
-//    }
 
     Scaffold(
         floatingActionButton = {
@@ -418,7 +349,6 @@ data class DetailPanelComposite(
 
 @Composable
 fun AboutScreen() {
-
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Text(
             text = "Aplikacja umożliwia przeglądanie i odkrywanie różnorodnych tras hikingowych o różnym stopniu trudności. Użytkownicy mogą przeglądać szczegółowe opisy tras, oglądać zdjęcia oraz śledzić swoje postępy na mapie. Aplikacja oferuje także funkcje rejestrowania czasu oraz dzielenia się wrażeniami z innymi użytkownikami.",
@@ -442,7 +372,7 @@ fun AS() {
 
 @Composable
 fun HikingAnimation() {
-    var targetProgress by remember { mutableStateOf(0f) }
+    var targetProgress by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
         while (true) {
             targetProgress = 1f
@@ -454,14 +384,12 @@ fun HikingAnimation() {
 
     val progress by animateFloatAsState(
         targetValue = targetProgress,
-        animationSpec = TweenSpec(durationMillis = 4000, easing = LinearEasing)
+        animationSpec = TweenSpec(durationMillis = 4000, easing = LinearEasing), label = ""
     )
 
-    // Parse the path data from the XML
     val pathData = "M0,50Q150,0 300,50T400,50"
     val path = PathParser.createPathFromPathData(pathData)
 
-    // Use PathMeasure to get the position along the path
     val pathMeasure = PathMeasure(path, false)
     val pathLength = pathMeasure.length
     val pos = floatArrayOf(0f, 0f)
