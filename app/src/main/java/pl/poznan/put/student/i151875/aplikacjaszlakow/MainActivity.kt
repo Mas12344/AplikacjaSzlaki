@@ -34,7 +34,6 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -60,17 +59,13 @@ import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.BlendMode.Companion.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.PathParser
-import coil.compose.rememberAsyncImagePainter
 import java.io.Serializable
 import java.util.Calendar
 import com.google.accompanist.pager.*
@@ -78,19 +73,13 @@ import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             TabNavigationScreen()
         }
     }
-
-
-
 }
-
 
 
 val DetailPanelCompositeSaver = listSaver<MutableList<DetailPanelComposite>, String>(
@@ -177,7 +166,6 @@ fun TabNavigationScreen() {
         mutableStateListOf(*initialHardDpcs.toTypedArray())
     }
 
-
     Column(modifier = Modifier.fillMaxWidth()) {
         TabRow(
             selectedTabIndex = pagerState.currentPage,
@@ -228,7 +216,6 @@ fun EasyTracksScreen(dpcs: MutableList<DetailPanelComposite>) {
         navigator.navigateBack()
     }
 
-
     ListDetailPaneScaffold(
         scaffoldState = navigator.scaffoldState,
         listPane = {
@@ -257,7 +244,6 @@ fun TrackItem(track: Track, onClick: () -> Unit) {
         .clickable { onClick() }
 
     ) {
-
         Image(
             painter = painterResource(id = track.photo),
             contentDescription = null,
@@ -266,55 +252,14 @@ fun TrackItem(track: Track, onClick: () -> Unit) {
                 .fillMaxWidth()
         )
         Text(text = track.name, style = MaterialTheme.typography.labelMedium)
-
     }
-}
-
-
-@Preview
-@Composable
-fun Td() {
-    val initialDpcs = listOf(
-        DetailPanelComposite(
-            Track(7, R.drawable.trasa_7, "Trasa 7", "Opis 7"),
-            MyTimerState(0, 0L, true)
-        ),
-        DetailPanelComposite(
-            Track(8, R.drawable.trasa_8, "Trasa 8", "Opis 8"),
-            MyTimerState(0, 0L, true)
-        ),
-        DetailPanelComposite(
-            Track(9, R.drawable.trasa_9, "Trasa 9", "Opis 9"),
-            MyTimerState(0, 0L, true)
-        ),
-        DetailPanelComposite(
-            Track(10, R.drawable.trasa_10, "Trasa 10", "Opis 10"),
-            MyTimerState(0, 0L, true)
-        ),
-        DetailPanelComposite(
-            Track(11, R.drawable.trasa_11, "Trasa 11", "Opis 11"),
-            MyTimerState(0, 0L, true)
-        ),
-        DetailPanelComposite(
-            Track(12, R.drawable.trasa_12, "Trasa 12", "Opis 12"),
-            MyTimerState(0, 0L, true)
-        )
-    )
-    val dpcs = rememberSaveable(saver = DetailPanelCompositeSaver) {
-        mutableStateListOf(*initialDpcs.toTypedArray())
-    }
-    TrackDetail(dpcs = dpcs, index = 0)
 }
 
 @Composable
 fun TrackDetail(dpcs: MutableList<DetailPanelComposite>, index: Int) {
     val track = dpcs[index].track
-    val tvm = TimerViewModel(dpcs[index].timerState.value, dpcs[index].timerState.exitTimestamp, dpcs[index].timerState.isPaused)
-
-
+    val tvm by rememberSaveable { mutableStateOf( TimerViewModel(dpcs[index].timerState.value, dpcs[index].timerState.exitTimestamp, dpcs[index].timerState.isPaused)) }
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) {
@@ -323,18 +268,12 @@ fun TrackDetail(dpcs: MutableList<DetailPanelComposite>, index: Int) {
 
     DisposableEffect(tvm) {
         onDispose {
-            dpcs[index].timerState.value = tvm.getTime()
-            dpcs[index].timerState.exitTimestamp = Calendar.getInstance().time.time
-            dpcs[index].timerState.isPaused = true
-        }
-    }
-
-    DisposableEffect(configuration.orientation) {
-        onDispose {
-            dpcs[index].timerState.value = tvm.getTime()
-            dpcs[index].timerState.exitTimestamp = Calendar.getInstance().time.time
-            dpcs[index].timerState.isPaused = true
-
+            val gt = tvm.timer.value
+            val tt = Calendar.getInstance().time.time
+            val ip = true
+            dpcs[index].timerState.value = gt
+            dpcs[index].timerState.exitTimestamp = tt
+            dpcs[index].timerState.isPaused = ip
         }
     }
 
@@ -374,7 +313,7 @@ fun TrackDetail(dpcs: MutableList<DetailPanelComposite>, index: Int) {
 }
 
 @Composable
-fun TrackGrid(dpcs: List<DetailPanelComposite>, onTrackSelected: (Int) -> Unit) {
+fun TrackGrid(dpcs: MutableList<DetailPanelComposite>, onTrackSelected: (Int) -> Unit) {
     Row {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(128.dp),
@@ -410,7 +349,6 @@ data class DetailPanelComposite(
 
 @Composable
 fun AboutScreen() {
-
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Text(
             text = "Aplikacja umożliwia przeglądanie i odkrywanie różnorodnych tras hikingowych o różnym stopniu trudności. Użytkownicy mogą przeglądać szczegółowe opisy tras, oglądać zdjęcia oraz śledzić swoje postępy na mapie. Aplikacja oferuje także funkcje rejestrowania czasu oraz dzielenia się wrażeniami z innymi użytkownikami.",
@@ -434,7 +372,7 @@ fun AS() {
 
 @Composable
 fun HikingAnimation() {
-    var targetProgress by remember { mutableStateOf(0f) }
+    var targetProgress by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
         while (true) {
             targetProgress = 1f
@@ -446,14 +384,12 @@ fun HikingAnimation() {
 
     val progress by animateFloatAsState(
         targetValue = targetProgress,
-        animationSpec = TweenSpec(durationMillis = 4000, easing = LinearEasing)
+        animationSpec = TweenSpec(durationMillis = 4000, easing = LinearEasing), label = ""
     )
 
-    // Parse the path data from the XML
     val pathData = "M0,50Q150,0 300,50T400,50"
     val path = PathParser.createPathFromPathData(pathData)
 
-    // Use PathMeasure to get the position along the path
     val pathMeasure = PathMeasure(path, false)
     val pathLength = pathMeasure.length
     val pos = floatArrayOf(0f, 0f)
@@ -475,7 +411,7 @@ fun HikingAnimation() {
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .size(48.dp)
-                .offset(x = pos[0].dp-24.dp, y = pos[1].dp-410.dp)
+                .offset(x = pos[0].dp - 24.dp, y = pos[1].dp - 410.dp)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop
         )
